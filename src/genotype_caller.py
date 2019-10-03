@@ -57,11 +57,3 @@ def laplace_smoothing(n_obs):
 
 def g_statistics(n_obs, n_exp):
     return 2 * np.add.reduce(n_obs * np.log(n_obs / n_exp))
-
-
-###########
-def add_genotype(df_allele_count):
-    call_data = []
-    for row in df_allele_count.itertuples():
-        call_data.append(call_genotype(row[2:6]))
-    return df_allele_count.join(pd.DataFrame(call_data, columns=["genotype", "DKLmin", "DKL2"]))
