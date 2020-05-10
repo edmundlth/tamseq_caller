@@ -1,0 +1,141 @@
+%\ProvidesPackage{thesis_style}[2017/08/15 Custom Package]
+
+
+\usepackage[a4paper, margin=1.5cm]{geometry}
+\usepackage{amsmath, amssymb, mathtools}
+\usepackage{accents}
+\usepackage{mdframed, array}
+\usepackage{tikz, tikz-cd}
+\usetikzlibrary{patterns} 
+\usepackage{bbm}
+\usepackage{color}
+\usetikzlibrary{calc}
+
+%\usepackage{fancyhdr}
+%\pagestyle{headings}
+%{\renewcommand{\sectionmark}[1]{\markright{\thesection.\ #1}}
+
+% Hyperref styles 
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    citecolor=black,
+    filecolor=black,
+    linkcolor=blue,
+    urlcolor=blue
+}
+
+%\usepackage[capitalize]{cleveref} %clever cross-referencing 
+% (NOTE: cleveref must the be loaded last among packages that does referencing, e.g. hyperref)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Style Choices
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\setlength\parindent{0pt}
+
+
+\usepackage[explicit]{titlesec}
+%\titleformat{\section}{\normalfont\Large\bfseries}{}{0em}{#1\ \thesection}
+%\titlelabel{\thetitle} % "original" format beside \thetitle
+%\renewcommand\thesection{\arabic{section}}
+%\renewcommand{\theproposition}{\arabic{section}.\arabic{prop}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% New command
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand\norm[1][\cdot]{\left\lVert#1\right\rVert}
+\newcommand\Lim[1][n]{\lim_{#1 \to \infty}}
+\newcommand{\set}[1]{\left\{#1\right\}}
+\newcommand{\inprod}[1][\cdot , \cdot]{\left\langle #1 \right\rangle}
+\newcommand{\brac}[1]{\left(#1\right)}
+\newcommand{\sqbrac}[1]{\left[#1\right]}
+\newcommand{\wh}{\,  \vert \, }
+\newcommand{\abs}[1]{\left|\, #1\,\right|}
+\newcommand{\p}{\partial} 
+\newcommand{\abrac}[1]{\left\langle #1 \right\rangle}
+\newcommand{\st}{\, \, : \,}
+\newcommand\sym[1][\xi]{\left\langle #1 \right\rangle}
+
+\newcommand{\supp}{\mathrm{supp}}
+\newcommand{\Ell}{\mathit{Ell}}
+\newcommand{\Char}{\Sigma}
+\newcommand{\WF}{\mathrm{WF}}
+\newcommand{\sch}{\mathcal{S}}
+
+\DeclareMathOperator*{\argmax}{argmax}
+
+
+\newcommand{\todo}[1]{\textcolor{red}{}}
+
+\renewcommand\d[1][x]{\, \mathrm{d}#1}
+\renewcommand{\leq}{\leqslant}
+\renewcommand{\geq}{\geqslant}
+
+\renewcommand{\S}{\mathbb S}
+
+% Definition for mathematics
+\def\R{{\ensuremath {\mathbb R}}}
+\def\Q{{\ensuremath {\mathbb Q}}}
+\def\C{{\ensuremath {\mathbb C}}}
+\def\N{{\ensuremath {\mathbb N}}}
+\def\Z{{\ensuremath {\mathbb Z}}}
+\def\T{{\ensuremath {\mathbb T}}}
+\def\P{{\ensuremath {\mathbb P}}}
+
+\def\B{{\ensuremath {\cal B}}}
+\def\A{{\ensuremath {\cal A}}}
+\def\F{{\ensuremath {\cal F}}}
+\def\D{{\cal{D}}}
+\def\L{{\cal{L}}}
+\def\K{{\cal{K}}}
+
+\def\ker{{\mathrm{ker}}}
+\def\coker{{\mathrm{coker}}}
+\def\im{{\mathrm{Im}}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Graphics and captions
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{graphicx} 
+\graphicspath{{./images/}} % Location of the graphics files
+\usepackage[font=normal,labelfont=bf, margin=5pt]{caption} 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Defining theorem environments 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{amsthm}
+\theoremstyle{plain}% default
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem*{cor}{Corollary}
+\newtheorem*{claim}{Claim}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{conjecture}{Conjecture}[section]
+\newtheorem{example}{Example}[section]
+
+\theoremstyle{remark}
+\newtheorem{rem}[definition]{Remark}
+\newtheorem{note}[definition]{Note}
+\newtheorem*{case}{Case}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Framed theorem environments
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newenvironment{ftheorem}{\begin{mdframed}\begin{theorem}}{\end{theorem}\end{mdframed}}
+\newenvironment{flemma}{\begin{mdframed}\begin{lemma}}{\end{lemma}\end{mdframed}}
+\newenvironment{fprop}{\begin{mdframed}\begin{proposition}}{\end{proposition}\end{mdframed}}
+\newenvironment{fdefinition}{\begin{mdframed}\begin{definition}}{\end{definition}\end{mdframed}}
+\newenvironment{fcor}{\begin{mdframed}\begin{cor}}{\end{cor}\end{mdframed}}
+
+  
+
+
+
+
+
+
+
+
