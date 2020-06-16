@@ -2,6 +2,8 @@ import numpy as np
 from scipy.special import gamma, loggamma, digamma, polygamma
 from scipy.optimize import root_scalar, newton, fsolve, root
 
+import time
+
 
 def trigamma(x):
     return polygamma(1, x)
@@ -55,19 +57,27 @@ def scipy_newton(n_obs, eps=1e-6, max_num_iter=50):
 def pseudocount_estimate(df_control,
                          eps=1e-6,
                          damping=1e-2,
-                         max_num_iter=10000):
+                         max_num_iter=10000,
+                         polling_freq=1000):
     df = df_control[df_control.sum(axis=1) > 0] + 1  # add-one smoothing and ignore loci with zero coverage.
 
     result = {}
-    for k, pos in enumerate(list(set(df.index))):
+    start_time = time.time()
+    loci = list(set(df.index))
+    num_locus = len(loci)
+    for k, pos in enumerate(loci):
         samples = np.array(df.loc[pos])
-        if samples.ndim != 2:
-            print(k, pos, samples)
+        if samples.ndim != 2 or samples.shape[0] <= 1:
+            print(f"{k}: Locus {pos} does not have sufficient samples: {samples}.")
             continue
+        if k % polling_freq == 0:
+            print(f"Processing position {k} of {num_locus} (loci: {pos}). Num samples: {len(samples)}. "
+                  f"Time elapsed: {np.around(time.time() - start_time)} s")
+
         count = np.sum(samples, axis=1).reshape(-1, 1)
         prob_pred = samples / count
         p = np.mean(prob_pred, axis=0)
-        v = np.var(prob_pred, axis=0)
+        v = np.var(prob_pred, axis=0) + eps**2
         alpha_pred = p * np.exp(np.mean(np.log(p * (1 - p) / v - 1)[:-1]))
 
         for i in range(max_num_iter):
@@ -82,9 +92,10 @@ def pseudocount_estimate(df_control,
                 result[pos] = [i, res]
                 result[pos].extend(alpha_pred)
                 break
-
             denominator = 1 / z + np.sum(q)
             numerator = np.dot(q, g)
             update_term = q * (g - numerator / denominator)
             alpha_pred -= damping * update_term
+            if i > max_num_iter - 1:
+                print(f"{k}: {pos} did not converge. Sample: {samples}")
     return result

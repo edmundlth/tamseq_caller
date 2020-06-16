@@ -4,19 +4,21 @@ from genotype_caller import call_genotype, ALLELES
 from somatic_variant_caller import somatic_vaf
 from per_base_error_estimate import error_estimate
 from dirichlet_fitting import pseudocount_estimate
-from scipy.special import gamma, loggamma, digamma, polygamma
+from scipy.special import loggamma
 from scipy import stats
 
 GENOTYPE_KEY = "genotype"
 ERROR_ESTIMATE_KEY = "error_estimate"
+CRHOM_KEY = "chrom"
 POS_KEY = "pos"
-RAW_COLUMNS = ['chrom', 'pos', 'sample', 'A', 'T', 'G', 'C', 'unfiltered coverage',
+LOCI_KEY = [CRHOM_KEY, POS_KEY]
+RAW_COLUMNS = ('chrom', 'pos', 'sample', 'A', 'T', 'G', 'C', 'unfiltered coverage',
                'filtered coverage', 'failed nm count', 'failed amplicon location',
                'failed mapping quality', 'failed align length', 'failed base quality',
                'failed valid DNA base', 'base absent', 'base not overlapped',
-               'failed overlapping positions']
+               'failed overlapping positions')
 
-BASE_COUNT_COLUMNS = [POS_KEY] + ALLELES
+BASE_COUNT_COLUMNS = LOCI_KEY + ALLELES
 VAF_HEADER = [f"VAF_{allele}" for allele in ALLELES]
 
 
@@ -130,24 +132,28 @@ class Dataset(object):
                                     eps=1e-6,
                                     damping=1e-2,
                                     max_num_iter=10000):
-        df_data = self.df_base_count.reset_index().set_index("pos")
+        df_data = self.df_base_count.reset_index().set_index(LOCI_KEY).sort_index()
         df = df_data.reset_index().set_index("sample").loc[
             self.controls,
-            ['pos'] + list(ALLELES)
-        ].set_index('pos').sort_index().copy(deep=True)
+            LOCI_KEY + list(ALLELES)
+        ].set_index(LOCI_KEY).sort_index().copy(deep=True)
         result = pseudocount_estimate(df, eps=eps, damping=damping, max_num_iter=max_num_iter)
-        self.df_pseudocount = pd.DataFrame.from_dict(result, orient="index")
-        self.df_pseudocount.columns = ["iter", "res"] + [f"alpha_{a}" for a in ALLELES]
+        df = pd.DataFrame.from_dict(result, orient="index")
+        df.columns = ["iter", "res"] + [f"alpha_{a}" for a in ALLELES]
+        index = np.array(list(df.index))
+        for i, name in enumerate(LOCI_KEY):
+            df[name] = index[:, i]
+        self.df_pseudocount = df.set_index(LOCI_KEY).sort_index()
         return result
 
     def case_samples_variant_calling(self, df_ref_allele, conf_level=0.99):
         case_samples = list(set(self.sample_name_to_filepaths.keys()) - set(self.controls))
-        df_data = self.df_base_count.reset_index().set_index("pos").join(df_ref_allele, how='left', on="pos")
+        df_data = self.df_base_count.reset_index().set_index(LOCI_KEY).join(df_ref_allele, how='left', on=LOCI_KEY)
 
         df_case = (df_data[df_data[ALLELES].sum(axis=1) > 0].reset_index().set_index('sample')
                    .loc[case_samples]
                    .reset_index()
-                   .set_index("pos")
+                   .set_index(LOCI_KEY)
                    .join(self.df_pseudocount, how="left"))
         self.df_case = df_case
         alpha_alleles = [f"alpha_{a}" for a in ALLELES]
@@ -169,9 +175,9 @@ class Dataset(object):
         df_case["ref_count"] = np.array(df_case[ALLELES])[np.newaxis, idx][0]
         header = list(df_case.columns)
         allele_array = np.array(ALLELES)
-        REF_INDEX_KEY = header.index("ref") + 1
-        VAF_KEYS_START = header.index("VAF_A") + 1
-        VAF_KEYS_END = header.index("VAF_C") + 2
+        ref_index_key = header.index("ref") + 1
+        vaf_keys_start = header.index("VAF_A") + 1
+        vaf_keys_end = header.index("VAF_C") + 2
         non_ref_mask = np.array([[0, 1, 1, 1],
                                  [1, 0, 1, 1],
                                  [1, 1, 0, 1],
@@ -179,8 +185,8 @@ class Dataset(object):
         alt_alleles = []
         alt_vafs = []
         for row in df_case.itertuples():
-            vaf = np.array(row[VAF_KEYS_START: VAF_KEYS_END])
-            ref_index = np.argmax(np.array(ALLELES) == row[REF_INDEX_KEY])
+            vaf = np.array(row[vaf_keys_start: vaf_keys_end])
+            ref_index = np.argmax(np.array(ALLELES) == row[ref_index_key])
             max_non_ref_vaf = np.max(vaf[non_ref_mask[ref_index]])
             if max_non_ref_vaf <= 1e-10 or np.any(np.isnan(vaf)):
                 alt = '.'  # allele_array[ref_index]
@@ -193,11 +199,10 @@ class Dataset(object):
         df_case["alt"] = alt_alleles
         df_case["alt_vaf"] = alt_vafs
 
+        df_case.index.name = "locus"
+        # df_case.set_index("pos", inplace=True)
 
-        df_case.index.name = "pos"
-        #df_case.set_index("pos", inplace=True)
-
-        X = np.array(df_case[ALLELES])
+        x = np.array(df_case[ALLELES])
         alpha_0 = np.array(df_case[alpha_alleles])
         a_0 = alpha_0.sum(axis=1)
         a_1 = np.ones(df_case.shape[0]) * 2
@@ -205,7 +210,7 @@ class Dataset(object):
         t1 = loggamma(a_0)
         t2 = loggamma(df_case["n"] + a_0)
         t3 = loggamma(df_case["n"] + a_1)
-        t4 = np.sum(loggamma(X + 1 / 2) - loggamma(X + alpha_0) + loggamma(alpha_0) - loggamma(1 / 2), axis=1)
+        t4 = np.sum(loggamma(x + 1 / 2) - loggamma(x + alpha_0) + loggamma(alpha_0) - loggamma(1 / 2), axis=1)
         b = t0 - t1 + t2 - t3 + t4
         b /= np.log(10)
         df_case["bayes_factor"] = b
@@ -281,10 +286,10 @@ class Sample(object):
             gt_data = call_genotype(row[2:])
             call_data[pos] = gt_data
         df_call = pd.DataFrame.from_dict(call_data, orient='index', columns=["genotype", "DKLmin", "DKL2"])
-        self.df_genotype = df[BASE_COUNT_COLUMNS].set_index(POS_KEY).join(df_call)
+        self.df_genotype = df[BASE_COUNT_COLUMNS].set_index(LOCI_KEY).join(df_call)
         return self.df_genotype
 
-    def get_somatic_vaf(self, position_error_esitmate=0.001, recalc=False, control_calc=False):
+    def get_somatic_vaf(self, position_error_esitmate, recalc=False, control_calc=False):
         if self.is_control and not control_calc:
             return None
 
