@@ -4,6 +4,7 @@ from dataset import Dataset
 
 DEFAULT_FILE_EXT = ".counts.csv"
 
+
 def main():
     args = parse_args()
     args.func(args)
